@@ -247,7 +247,12 @@ export default function CreateInspection() {
             <Link href="/">
               <Button variant="outlined">Cancel</Button>
             </Link>
-            <LoadingButton type="submit" variant="contained" loading={loading}>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loading={loading}
+              disabled={loading}
+            >
               Submit
             </LoadingButton>
           </div>
