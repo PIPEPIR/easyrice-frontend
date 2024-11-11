@@ -25,9 +25,12 @@ export interface FormData {
   samplingDate?: Date;
 }
 
-export interface Errors {
-  nameError: boolean;
-  standardError: boolean;
+export interface EditInspectionFormData {
+  updatedAt?: string;
+  note?: string;
+  price?: number;
+  samplingPoint?: string[];
+  samplingDate?: string | null;
 }
 
 export interface InspectionData {

@@ -134,7 +134,7 @@ const HistoryTable = () => {
         className="cursor-pointer"
         hover
         onClick={() => {
-          router.push(`/edit-inspection/${inspection.inspectionID}`);
+          router.push(`/view-inspection/${inspection.inspectionID}`);
         }}
       >
         <TableCell padding="checkbox">

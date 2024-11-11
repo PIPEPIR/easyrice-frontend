@@ -11,23 +11,25 @@ import {
   FormControl,
   FormLabel,
   Divider,
+  FormHelperText,
 } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import { useEffect, useState } from "react";
 import { LoadingButton } from "@mui/lab";
 import { useRouter } from "next/navigation";
-import {
-  Standard,
-  Errors,
-  InspectionData,
-  FormData,
-} from "../interfaces/interfaces";
+import { Standard, InspectionData, FormData } from "../interfaces/interfaces";
 import Link from "next/link";
 
 const generateInspectionID = () => {
   const id = uuidv4();
   return `MI-${id}`;
 };
+
+export interface Errors {
+  nameError: boolean;
+  standardError: boolean;
+  priceError?: boolean;
+}
 
 export default function CreateInspection() {
   const router = useRouter();
@@ -41,14 +43,22 @@ export default function CreateInspection() {
   const [samplingPointArray, setSamplingPointArray] = useState<string[]>([]);
 
   const validateInput = () => {
+    let isPriceError = false;
+    const nameError = !formData.name;
+    const standardError = !formData.standard;
+    if (formData.price) {
+      isPriceError = !(formData.price >= 0 && formData.price <= 1000000);
+    }
     setErrors({
-      nameError: !formData.name,
-      standardError: !formData.standard,
+      nameError: nameError,
+      standardError: standardError,
+      priceError: isPriceError,
     });
+    return !(nameError || standardError || isPriceError);
   };
 
   const transformFormData = (formData: FormData): InspectionData => {
-    const selectedStandard = JSON.parse(formData.standard);
+    const selectedStandard = formData.standard && JSON.parse(formData.standard);
 
     return {
       inspectionID: generateInspectionID(),
@@ -76,9 +86,9 @@ export default function CreateInspection() {
           if (res.ok && res.status === 201) {
             router.push("/");
           }
+          setLoading(false);
         })
-        .catch((e) => console.log(e))
-        .finally(() => setLoading(false));
+        .catch((e) => console.log(e));
     } catch (e) {
       console.log(e);
     }
@@ -86,12 +96,12 @@ export default function CreateInspection() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    validateInput();
-    if (errors?.nameError || errors?.standardError) {
-      return;
+    console.log(errors);
+    if (validateInput()) {
+      const transformedData = transformFormData(formData);
+      console.log(transformedData);
+      createInspection(transformedData);
     }
-    const transformedData = transformFormData(formData);
-    createInspection(transformedData);
   };
 
   const handleCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,7 +151,6 @@ export default function CreateInspection() {
               error={errors?.nameError}
             />
           </FormControl>
-
           <FormControl
             className="space-y-2"
             fullWidth
@@ -170,16 +179,13 @@ export default function CreateInspection() {
                 ))}
             </Select>
           </FormControl>
-
           <FormControl className="space-y-2" fullWidth>
             <FormLabel className=" text-black font-semibold">
               Upload File
             </FormLabel>
             <TextField defaultValue="raw1.json" variant="outlined" disabled />
           </FormControl>
-
           <Divider />
-
           <FormControl className="space-y-2" fullWidth>
             <FormLabel className=" text-black font-semibold">Note</FormLabel>
             <TextField
@@ -190,8 +196,11 @@ export default function CreateInspection() {
               }
             />
           </FormControl>
-
-          <FormControl className="space-y-2" fullWidth>
+          <FormControl
+            className="space-y-2"
+            fullWidth
+            error={errors?.priceError}
+          >
             <FormLabel className=" text-black font-semibold">Price</FormLabel>
             <TextField
               placeholder="10,000"
@@ -199,12 +208,18 @@ export default function CreateInspection() {
               onChange={(v) =>
                 setFormData({
                   ...formData,
-                  price: parseFloat(v.target.value),
+                  price: Number(v.target.value),
                 })
               }
+              type="number"
+              error={errors?.priceError}
             />
+            {errors?.priceError && (
+              <FormHelperText>
+                The price should be within the range of 0 - 100,000
+              </FormHelperText>
+            )}
           </FormControl>
-
           <div>
             <FormLabel className=" text-black font-semibold">
               Sampling Point
@@ -228,7 +243,6 @@ export default function CreateInspection() {
               />
             </div>
           </div>
-
           <FormControl className="space-y-2" fullWidth>
             <FormLabel className=" text-black font-semibold">
               Date/Time of Sampling
@@ -242,7 +256,6 @@ export default function CreateInspection() {
               ampm={false}
             />
           </FormControl>
-
           <div className="flex justify-end gap-3">
             <Link href="/">
               <Button variant="outlined">Cancel</Button>
@@ -251,7 +264,7 @@ export default function CreateInspection() {
               type="submit"
               variant="contained"
               loading={loading}
-              disabled={loading}
+              disabled={loading || !data || data.length === 0}
             >
               Submit
             </LoadingButton>
